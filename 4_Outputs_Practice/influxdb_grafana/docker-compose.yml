@@ -1,0 +1,47 @@
+version: '3.8'
+
+networks:
+  monitoring:
+
+services:
+  influxdb:
+    image: influxdb:2.0-alpine
+    networks:
+      - monitoring
+    ports:
+      - "8086:8086"
+    environment:
+      - DOCKER_INFLUXDB_INIT_MODE=setup
+      - DOCKER_INFLUXDB_INIT_USERNAME=croco
+      - DOCKER_INFLUXDB_INIT_PASSWORD=password1
+      - DOCKER_INFLUXDB_INIT_ORG=k6io
+      - DOCKER_INFLUXDB_INIT_BUCKET=demo
+      - DOCKER_INFLUXDB_INIT_ADMIN_TOKEN=EEKpryGZk8pVDXmIuy484BKUxM5jOEDv7YNoeNZUbsNbpbPbP6kK_qY9Zsyw7zNnlZ7pHG16FYzNaqwLMBUz8g==
+
+  grafana:
+    image: grafana/grafana
+    ports:
+      - 3000:3000
+    environment:
+      - GF_SECURITY_ADMIN_PASSWORD=admin123
+    volumes:
+      - ./grafana:/etc/grafana/provisioning/
+    networks:
+      - monitoring
+
+  k6:
+    build: https://github.com/grafana/xk6-output-influxdb.git#main
+    networks:
+      - monitoring
+    ports:
+      - "6565:6565"
+    environment:
+      - K6_OUT=xk6-influxdb=http://influxdb:8086
+      - K6_INFLUXDB_ORGANIZATION=k6io
+      - K6_INFLUXDB_BUCKET=demo
+      - K6_INFLUXDB_INSECURE=true
+        # NOTE: This is an Admin token, it's not suggested to use this configuration in production.
+        # Instead, use a Token with restricted privileges.
+      - K6_INFLUXDB_TOKEN=EEKpryGZk8pVDXmIuy484BKUxM5jOEDv7YNoeNZUbsNbpbPbP6kK_qY9Zsyw7zNnlZ7pHG16FYzNaqwLMBUz8g==
+    volumes:
+      - ./scripts:/scripts
