@@ -1,0 +1,10 @@
+apiVersion: k6.io/v1alpha1
+kind: TestRun
+metadata:
+  name: huge-load-test-with-cm
+spec:
+  parallelism: 2
+  script:
+    configMap:
+      name: huge-load-script
+      file: huge_load_script.js
